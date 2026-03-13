@@ -28,7 +28,7 @@ userSchema.pre("save", async function(){
     this.password = hashP;
 })
 
-userSchema.models.checkPassword = async function(password){
+userSchema.methods.checkPassword = async function(password){
     return bcrypt.compare(password, this.password)
 }
 

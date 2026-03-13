@@ -1,31 +1,31 @@
 import mongoose from "mongoose";
-import { UserModel } from "../models/user.model";
+import { UserModel } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import { tokenBlackListModel } from "../models/tokenBlacklist.model";
-
+import bcrypt from 'bcrypt'
+import { tokenBlackListModel } from "../models/tokenBlacklist.model.js";
 
 export const userLoginController = async (req, res) => {
   const { email, password } = req.body;
-  if(!email || !password){
-    res.status(400).json({message:"All fields are required"})
+  if (!email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
   }
   const user = await UserModel.findOne({ email });
   if (!user) {
-    res.status(400).json({ message: "User does not exist signUp" });
+    return res.status(400).json({ message: "User does not exist signUp" });
   }
 
   const isPassCorrect = await user.checkPassword(password);
   if (!isPassCorrect) {
-    res.status(400).json({ message: "Pass is Incorrect" });
+    return res.status(400).json({ message: "Pass is Incorrect" });
   }
 
-  const token = jwt.sign({ userId: _id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
     expiresIn: "5d",
   });
   res.cookie("token", token);
   res.status(201).json({
     message: "User successfully registered",
-    user: { _id: newUser._id, email: newUser.email, name: newUser.username },
+    user: { _id: user._id, email: user.email, name: user.username },
     token,
   });
 };
@@ -39,13 +39,15 @@ export const userSignupController = async (req, res) => {
     });
   }
 
-  const user =await UserModel.findOne({ $or: [{ email: email }, { username }] });
+  const user = await UserModel.findOne({
+    $or: [{ email: email }, { username }],
+  });
   if (user) {
-    res.status(400).json({ message: "User with this email exists" });
+    return res.status(400).json({ message: "User with this email exists" });
   }
-  const hash=await bcrypt.hash(password, 10);
-  const newUser = await new UserModel({ username, email, password:hash });
-  newUser.save();
+  const hash = await bcrypt.hash(password, 10);
+  const newUser = await new UserModel({ username, email, password: hash });
+  await newUser.save();
   const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
     expiresIn: "5d",
   });
@@ -56,16 +58,24 @@ export const userSignupController = async (req, res) => {
     token,
   });
 };
+export const userLogoutController = async (req, res) => {
+  try {
+    const token = req.cookies.token;
 
-export const userLogoutController = async(req, res) =>{
-  const token = req.cookies.token;
-  const checkToken = await tokenBlackListModel.findOne({token})
-  if(checkToken){
-    res.status(400).json({message: "token does not exists"})
+    if (!token) {
+      return res.status(400).json({ message: "You are already logged out" });
+    }
+
+    const isAlreadyBlacklisted = await tokenBlackListModel.findOne({ token });
+
+    if (!isAlreadyBlacklisted) {
+      const blacklistedToken = new tokenBlackListModel({ token });
+      await blacklistedToken.save();
+    }
+
+    res.clearCookie("token");
+    return res.status(200).json({ message: "User successfully Logged Out" });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error during logout" });
   }
-  new Black = await new tokenBlackListModel({token});
-  Black.save();
-
-  const clearCookie = res.clearCookie("token");
-  res.status(200).json({message:"User successfully LoggedOut"})
-}
+};
