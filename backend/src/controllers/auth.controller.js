@@ -58,6 +58,7 @@ export const userSignupController = async (req, res) => {
     token,
   });
 };
+
 export const userLogoutController = async (req, res) => {
   try {
     const token = req.cookies.token;
@@ -79,3 +80,16 @@ export const userLogoutController = async (req, res) => {
     return res.status(500).json({ message: "Server error during logout" });
   }
 };
+
+export const getMeController = async(req, res) =>{
+
+  if(!req.user){
+    return res.status(404).json({message:"User not found"})
+  }
+
+  return res.status(200).json({message:"Successfully got the user", user:{
+    _id:req.user._id,
+    email:req.user.email,
+    user:req.user.username
+  }})
+}
