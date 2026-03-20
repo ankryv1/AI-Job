@@ -7,7 +7,7 @@ import { useParams } from "react-router"
 export const useInterview = () => {
 
     const context = useContext(InterviewContext)
-    const { interviewId } = useParams()
+    const { id } = useParams()
 
     if (!context) {
         throw new Error("useInterview must be used within an InterviewProvider")
@@ -20,7 +20,7 @@ export const useInterview = () => {
         let response = null
         try {
             response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
-            setReport(response.interviewReport)
+            setReport(response?.interviewReport)
         } catch (error) {
             console.log(error)
         } finally {
@@ -30,18 +30,18 @@ export const useInterview = () => {
         return response.interviewReport
     }
 
-    const getReportById = async (interviewId) => {
+    const getReportById = async (id) => {
         setLoading(true)
         let response = null
         try {
-            response = await getInterviewReportById(interviewId)
-            setReport(response.interviewReport)
+            response = await getInterviewReportById(id)
+            setReport(response?.Reports)
         } catch (error) {
             console.log(error)
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
+        return response.Reports
     }
 
     const getReports = async () => {
@@ -49,25 +49,25 @@ export const useInterview = () => {
         let response = null
         try {
             response = await getAllInterviewReports()
-            setReports(response.interviewReports)
+            setReports(response?.Reports)
         } catch (error) {
             console.log(error)
         } finally {
             setLoading(false)
         }
 
-        return response.interviewReports
+        return response?.Reports
     }
 
-    const getResumePdf = async (interviewReportId) => {
+    const getResumePdf = async (id) => {
         setLoading(true)
         let response = null
         try {
-            response = await generateResumePdf({ interviewReportId })
+            response = await generateResumePdf({ id })
             const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
             const link = document.createElement("a")
             link.href = url
-            link.setAttribute("download", `resume_${interviewReportId}.pdf`)
+            link.setAttribute("download", `resume_${id}.pdf`)
             document.body.appendChild(link)
             link.click()
         }
@@ -79,12 +79,12 @@ export const useInterview = () => {
     }
 
     useEffect(() => {
-        if (interviewId) {
-            getReportById(interviewId)
+        if (id) {
+            getReportById(id)
         } else {
             getReports()
         }
-    }, [ interviewId ])
+    }, [ id ])
 
     return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf }
 

@@ -46,7 +46,7 @@ export const userSignupController = async (req, res) => {
     return res.status(400).json({ message: "User with this email exists" });
   }
   const hash = await bcrypt.hash(password, 10);
-  const newUser = await new UserModel({ username, email, password: hash });
+  const newUser = new UserModel({ username, email, password: hash });
   await newUser.save();
   const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
     expiresIn: "5d",
