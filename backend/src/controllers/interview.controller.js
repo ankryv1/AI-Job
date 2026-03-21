@@ -1,8 +1,9 @@
 
 import * as pdfParseModule from "pdf-parse";
 const pdfParse = pdfParseModule.default ?? pdfParseModule;
-import generateInterviewReport from "../services/ai.service.js";
+import generateInterviewReport, { generateAiPdf } from "../services/ai.service.js";
 import interviewReportModel from "../models/interviewReport.model.js";
+import { generatePdfFromHtml } from "../services/generatePDF.service.js";
 
 
 export const interviewReportController = async(req, res) =>{
@@ -51,4 +52,12 @@ export const getInterviewReportByIdController = async(req, res) =>{
         return res.status(400).json({message:"id is not valid"}).select("-jobDescription -resume -selfDescription ")
     }
     return res.status(200).json({message:"Successfully fetched", Reports: interviewReportById});
+}
+
+export const generateResumeByAiController = async(req, res) =>{
+    const {jobDescription, selfDescription} = req.body;
+    const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
+    const gotTheHTML =  generateAiPdf({ jobDescription, resume, selfDescription });
+    const nowGotPage = generatePdfFromHtml(gotTheHTML);
+    return res.status(200).json({message:"yes i got tthe pdf generation", })
 }

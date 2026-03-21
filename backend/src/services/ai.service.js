@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { jsonrepair } from "jsonrepair";
+import {z} from 'zod';
+import {zodToJsonSchema} from 'zod-to-json-schema'
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -93,15 +95,10 @@ function normalizeAIResponse(data) {
 
     skillGaps: fixArray(data.skillGaps, ["skill", "severity"]),
 
-    preparationPlan: fixArray(data.preparationPlan, [
-      "day",
-      "focus",
-      "tasks",
-    ]),
+    preparationPlan: fixArray(data.preparationPlan, ["day", "focus", "tasks"]),
   };
 }
 
-// 🔥 Handles both correct + broken AI arrays
 function fixArray(arr, keys) {
   if (!Array.isArray(arr)) return [];
 
@@ -123,5 +120,31 @@ function fixArray(arr, keys) {
 
   return result;
 }
+
+export const generateAiPdf = async ({ jobDescription, resume, selfDescription }) => {
+ 
+  const HTMLschema = z.object({
+    html: z.string().describe( "Make a HTML for it that can be easily converted to PDF by puppeteer",),
+  });
+
+  const prompt = `Generate a html which can be converted to PDF by puppeteer and take reference from the jobDescription,selfDescription and resume provided by the user
+                  ${jobDescription},
+                  ${resume},
+                  ${selfDescription}
+                  the response should be in JSON format with a single html field
+                  `
+
+  const response = await genAI.models.generateContent({model: 'gemini-2.5-flash',
+                                                      contents: prompt,
+                                                      config: {
+                                                        responseMimeType:"application/json",
+                                                        responseSchema: zodToJsonSchema(HTMLschema)
+                                                      }});
+     console.log(response.text);  
+     const data = JSON.parse(response.text);
+                                                   
+
+
+};
 
 export default generateInterviewReport;
