@@ -15,6 +15,11 @@ async function generateInterviewReport({
   // 🔥 Trim large input (VERY IMPORTANT)
   const safeResume = resume?.slice(0, 3000);
 
+  let candidateInfo='';
+  if(safeResume) candidateInfo+= `Resume: ${safeResume}\n`;
+  if(selfDescription) candidateInfo+=`SelfDescription: ${selfDescription}\n`
+
+
   const prompt = `
 Return ONLY valid JSON.
 
@@ -44,8 +49,7 @@ RULES:
 - Do NOT add explanation text
 
 DATA:
-Resume: ${safeResume}
-Self: ${selfDescription}
+${candidateInfo},
 Job: ${jobDescription}
 `;
 
@@ -56,21 +60,19 @@ Job: ${jobDescription}
 
   let parsed;
 
-  // ✅ Step 1: Try normal parse
   try {
     parsed = JSON.parse(response.text);
   } catch (err) {
-    console.log("⚠️ Broken JSON, repairing...");
+    console.log(" Broken JSON, repairing...");
     try {
       const fixed = jsonrepair(response.text);
       parsed = JSON.parse(fixed);
     } catch (e) {
-      console.error("❌ Still invalid JSON:", response.text);
+      console.error(" Still invalid JSON:", response.text);
       throw new Error("AI response parsing failed");
     }
   }
 
-  // ✅ Step 2: Normalize (VERY IMPORTANT)
   const normalized = normalizeAIResponse(parsed);
 
   return normalized;
@@ -102,12 +104,10 @@ function normalizeAIResponse(data) {
 function fixArray(arr, keys) {
   if (!Array.isArray(arr)) return [];
 
-  // ✅ Case 1: Already correct
   if (typeof arr[0] === "object") {
     return arr;
   }
 
-  // ❌ Case 2: Broken flat array → convert
   const result = [];
 
   for (let i = 0; i < arr.length; i += keys.length) {
@@ -121,7 +121,7 @@ function fixArray(arr, keys) {
   return result;
 }
 
-export const generateAiPdf = async ({ jobDescription, resume, selfDescription }) => {
+export const generateHtmlFromAi = async ({ jobDescription, resume, selfDescription }) => {
  
   const HTMLschema = z.object({
     html: z.string().describe( "Make a HTML for it that can be easily converted to PDF by puppeteer",),
@@ -131,7 +131,7 @@ export const generateAiPdf = async ({ jobDescription, resume, selfDescription })
                   ${jobDescription},
                   ${resume},
                   ${selfDescription}
-                  the response should be in JSON format with a single html field
+                  the response should be in JSON format with a single html field, and make sure it should be within 1 page only, and highlight key points
                   `
 
   const response = await genAI.models.generateContent({model: 'gemini-2.5-flash',
@@ -140,9 +140,9 @@ export const generateAiPdf = async ({ jobDescription, resume, selfDescription })
                                                         responseMimeType:"application/json",
                                                         responseSchema: zodToJsonSchema(HTMLschema)
                                                       }});
-     console.log(response.text);  
+    //  console.log(response.text);  
      const data = JSON.parse(response.text);
-                                                   
+     return data;                                              
 
 
 };

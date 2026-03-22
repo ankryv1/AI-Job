@@ -14,5 +14,5 @@ export const generatePdfFromHtml = async (htmlContent) => {
 
   await browser.close();
 
-  return pdfBuffer; // ✅ IMPORTANT
+  return pdfBuffer;
 };

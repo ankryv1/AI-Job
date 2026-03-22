@@ -1,25 +1,29 @@
 
 import * as pdfParseModule from "pdf-parse";
 const pdfParse = pdfParseModule.default ?? pdfParseModule;
-import generateInterviewReport, { generateAiPdf } from "../services/ai.service.js";
+import generateInterviewReport, { generateHtmlFromAi } from "../services/ai.service.js";
 import interviewReportModel from "../models/interviewReport.model.js";
 import { generatePdfFromHtml } from "../services/generatePDF.service.js";
 
 
 export const interviewReportController = async(req, res) =>{
-
-    const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+    const resumeText=null;
+    if(res.file){
+        const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
+        resumeText = resumeContent.text;
+    }
+    
     const { selfDescription, jobDescription } = req.body
-
+    
     const interViewReportByAi = await generateInterviewReport({
-        resume: resumeContent.text,
+        resume: resumeText,
         selfDescription,
         jobDescription
     })
 
     const interviewReport = await interviewReportModel.create({
         user: req.user.id,
-        resume: resumeContent.text,
+        resume: resumeText,
         selfDescription,
         jobDescription,
         ...interViewReportByAi
@@ -55,9 +59,15 @@ export const getInterviewReportByIdController = async(req, res) =>{
 }
 
 export const generateResumeByAiController = async(req, res) =>{
-    const {jobDescription, selfDescription} = req.body;
-    const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
-    const gotTheHTML =  generateAiPdf({ jobDescription, resume, selfDescription });
-    const nowGotPage = generatePdfFromHtml(gotTheHTML);
-    return res.status(200).json({message:"yes i got tthe pdf generation", })
-}
+    const {id} = req.params;
+    const interviewReportDetails = await interviewReportModel.findById(id);
+    if(!interviewReportDetails){
+        return res.status(404).json({message:"Such Interview  does not exists"})
+    }
+    const {resume, jobDescription, selfDescription} = interviewReportDetails;
+    const gotTheHTML = await generateHtmlFromAi({ jobDescription, resume, selfDescription });
+    const nowGotPage = await generatePdfFromHtml(gotTheHTML.html);
+     res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="resume.pdf"');
+    return res.send(nowGotPage);
+};
