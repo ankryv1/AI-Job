@@ -40,44 +40,6 @@ AI:
 
 ---
 
-# AI Resume Analyzer & Generator
-
-A full-stack application that analyzes a candidate’s resume against a job description and generates a personalized interview report along with a job-specific resume.
-
----
-
-## Features
-
-- Upload resume (PDF/DOCX)
-- Analyze resume using AI (Gemini API)
-- Generate match score based on job description
-- Generate technical and behavioral interview questions
-- Identify skill gaps
-- Provide a preparation plan
-- Generate job-specific resume
-- Download resume as PDF
-
----
-
-## Tech Stack
-
-Frontend:
-- React.js
-- SCSS
-- Axios
-- React Router
-
-Backend:
-- Node.js
-- Express.js
-- MongoDB (Mongoose)
-- Multer (file upload)
-- pdf-parse (resume parsing)
-- Puppeteer (PDF generation)
-
-AI:
-- Google Gemini API
-
 
 File Structure-
 #  BACKEND
