@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin:"https://ai-job-sable.vercel.app",
+    origin:"https://ai-5musa78ou-ankryv1s-projects.vercel.app",
     credentials: true
 }))
 
